@@ -1,0 +1,24 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+*.mp4
+*.webm
+*.avi
+*.mov
+*.mkv
+*.wmv
+*.flv
+*.gif
+*.m4v
+*.3gp
+
+# Build artifacts
+build/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
