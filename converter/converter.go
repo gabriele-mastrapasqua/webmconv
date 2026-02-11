@@ -7,15 +7,33 @@ import (
 	"path/filepath"
 )
 
+// Quality rappresenta il livello di qualità per la conversione
+type Quality string
+
+const (
+	QualityMax   Quality = "max"
+	QualityMedium Quality = "medium"
+	QualityLow   Quality = "low"
+)
+
 // ConvertToWebM converte un file video/gif in formato WebM usando FFmpeg
-func ConvertToWebM(inputPath string, outputPath string) error {
+func ConvertToWebM(inputPath string, outputPath string, quality Quality) error {
 	// Controlla se il percorso di output contiene già l'estensione .webm
 	if filepath.Ext(outputPath) != ".webm" {
 		outputPath = filepath.Join(filepath.Dir(outputPath), filepath.Base(inputPath)+".webm")
 	}
 
+	// Imposta i parametri di qualità
+	crfValue := "30" // Valore predefinito per qualità media
+	switch quality {
+	case QualityMax:
+		crfValue = "15" // Qualità molto alta (CRF basso)
+	case QualityLow:
+		crfValue = "45" // Qualità bassa (CRF alto)
+	}
+
 	// Costruisci il comando FFmpeg
-	cmd := exec.Command("ffmpeg", "-i", inputPath, "-c:v", "libvpx-vp9", "-crf", "30", "-b:v", "0", "-b:a", "128k", "-c:a", "libopus", outputPath)
+	cmd := exec.Command("ffmpeg", "-i", inputPath, "-c:v", "libvpx-vp9", "-crf", crfValue, "-b:v", "0", "-b:a", "128k", "-c:a", "libopus", outputPath)
 
 	// Esegui il comando e controlla per eventuali errori
 	err := cmd.Run()

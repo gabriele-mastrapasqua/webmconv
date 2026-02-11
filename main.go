@@ -18,6 +18,7 @@ func main() {
 	// Define flags for source and destination directories
 	sourceDir := flag.String("source", "", "Directory containing the files to convert")
 	destDir := flag.String("dest", "", "Directory to save the converted files (optional, otherwise uses the same directory)")
+	qualityStr := flag.String("quality", "medium", "Quality level for conversion: max, medium, low")
 	help := flag.Bool("help", false, "Show this help message")
 	flag.Parse()
 
@@ -25,6 +26,17 @@ func main() {
 	if *help {
 		showHelp()
 		os.Exit(0)
+	}
+
+	// Parse quality level
+	var quality converter.Quality
+	switch *qualityStr {
+	case "max":
+		quality = converter.QualityMax
+	case "low":
+		quality = converter.QualityLow
+	default:
+		quality = converter.QualityMedium
 	}
 
 	// Check if FFmpeg is available
@@ -85,7 +97,7 @@ func main() {
 			}
 
 			// Convert the file
-			if err := converter.ConvertToWebM(f, destPath); err != nil {
+			if err := converter.ConvertToWebM(f, destPath, quality); err != nil {
 				log.Printf(" Error: %v\n", err)
 			} else {
 				fmt.Println(" Completed.")
@@ -105,16 +117,17 @@ func showHelp() {
 	fmt.Println("webmconv - A tool to convert video and GIF files to WebM format")
 	fmt.Println("")
 	fmt.Println("Usage:")
-	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>]")
+	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>] [-quality <quality_level>]")
 	fmt.Println("")
 	fmt.Println("Options:")
 	fmt.Println("  -source    Directory containing the files to convert (required)")
 	fmt.Println("  -dest      Directory to save the converted files (optional, otherwise uses the same directory)")
+	fmt.Println("  -quality   Quality level for conversion: max, medium, low (default: medium)")
 	fmt.Println("  -help      Show this help message")
 	fmt.Println("")
 	fmt.Println("Example:")
-	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output")
-	fmt.Println("  webmconv -source /path/to/videos")
+	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output -quality max")
+	fmt.Println("  webmconv -source /path/to/videos -quality low")
 	fmt.Println("")
 	fmt.Println("Note: Ensure FFmpeg is installed and in your system PATH.")
 }

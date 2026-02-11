@@ -46,13 +46,14 @@ webmconv -source <source_directory> [-dest <destination_directory>]
 
 - `-source`: Directory containing the files to convert (required)
 - `-dest`: Directory to save the converted files (optional, defaults to the source directory)
+- `-quality`: Quality level for conversion: max, medium, low (optional, defaults to medium)
 - `-help`: Show help message
 
 #### Example
 
 ```sh
-webmconv -source /path/to/videos -dest /path/to/output
-webmconv -source /path/to/videos
+webmconv -source /path/to/videos -dest /path/to/output -quality max
+webmconv -source /path/to/videos -quality low
 ```
 
 ### Make Commands
