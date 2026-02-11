@@ -18,7 +18,7 @@ func main() {
 	// Define flags for source and destination directories
 	sourceDir := flag.String("source", "", "Directory containing the files to convert")
 	destDir := flag.String("dest", "", "Directory to save the converted files (optional, otherwise uses the same directory)")
-	qualityStr := flag.String("quality", "medium", "Quality level for conversion: max, medium, low")
+	qualityStr := flag.String("quality", "max", "Quality level for conversion: max, medium, low")
 	rangeOpt := flag.String("range", "", "Time range for conversion in format start-end (e.g., 0-100s, 10-50s)")
 	help := flag.Bool("help", false, "Show this help message")
 	flag.Parse()
@@ -45,25 +45,38 @@ func main() {
 		log.Fatal("FFmpeg not found in the system. Please ensure it is installed and in your PATH.")
 	}
 
-	// Check if source directory was provided
+	// Check if source was provided
 	if *sourceDir == "" {
-		log.Fatal("Source directory must be specified with the -source flag")
+		log.Fatal("Source must be specified with the -source flag (can be a file or directory)")
 	}
 
-	// Check if source directory exists
-	if _, err := os.Stat(*sourceDir); os.IsNotExist(err) {
-		log.Fatalf("Source directory %s does not exist", *sourceDir)
+	// Check if source is a file or directory
+	sourceInfo, err := os.Stat(*sourceDir)
+	if os.IsNotExist(err) {
+		log.Fatalf("Source %s does not exist", *sourceDir)
 	}
 
-	// If destination directory is not specified, use the source directory
+	var files []string
+	var sourceBaseDir string
+
+	if sourceInfo.IsDir() {
+		// Source is a directory
+		sourceBaseDir = *sourceDir
+		
+		// Get all supported files from the source directory
+		files, err = utils.GetSupportedFiles(*sourceDir)
+		if err != nil {
+			log.Fatalf("Error scanning directory: %v", err)
+		}
+	} else {
+		// Source is a single file
+		sourceBaseDir = filepath.Dir(*sourceDir)
+		files = []string{*sourceDir}
+	}
+
+	// If destination directory is not specified, use the source directory (or parent of source file)
 	if *destDir == "" {
-		*destDir = *sourceDir
-	}
-
-	// Get all supported files from the source directory
-	files, err := utils.GetSupportedFiles(*sourceDir)
-	if err != nil {
-		log.Fatalf("Error scanning directory: %v", err)
+		*destDir = sourceBaseDir
 	}
 
 	// Counter to track progress
@@ -118,18 +131,24 @@ func showHelp() {
 	fmt.Println("webmconv - A tool to convert video and GIF files to WebM format")
 	fmt.Println("")
 	fmt.Println("Usage:")
-	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>] [-quality <quality_level>] [-range <time_range>]")
+	fmt.Println("  webmconv -source <source_path> [-dest <destination_directory>] [-quality <quality_level>] [-range <time_range>]")
 	fmt.Println("")
 	fmt.Println("Options:")
-	fmt.Println("  -source    Directory containing the files to convert (required)")
+	fmt.Println("  -source    Directory containing the files to convert or a single file to convert (required)")
 	fmt.Println("  -dest      Directory to save the converted files (optional, otherwise uses the same directory)")
-	fmt.Println("  -quality   Quality level for conversion: max, medium, low (default: medium)")
-	fmt.Println("  -range     Time range for conversion in format start-end (e.g., 0-100s, 10-50s)")
+	fmt.Println("  -quality   Quality level for conversion: max, medium, low (default: max)")
+	fmt.Println("  -range     Time range for conversion in format start-end (e.g., 0-100s, 10-50s, 1:02-2:30, 1:10:30-2:15:20)")
 	fmt.Println("  -help      Show this help message")
 	fmt.Println("")
 	fmt.Println("Example:")
+	fmt.Println("  # Convert all files in a directory")
 	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output -quality max")
+	fmt.Println("  # Convert a single file")
+	fmt.Println("  webmconv -source /path/to/video.mp4 -dest /path/to/output -quality max")
+	fmt.Println("  # Convert with time range")
 	fmt.Println("  webmconv -source /path/to/videos -quality low -range 0-30s")
+	fmt.Println("  webmconv -source /path/to/video.mp4 -dest /path/to/output -quality medium -range 1:02-2:30")
+	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output -quality low -range 1:10:30-2:15:20")
 	fmt.Println("")
 	fmt.Println("Note: Ensure FFmpeg is installed and in your system PATH.")
 }

@@ -1,6 +1,6 @@
-# Makefile per webmconv
+# Makefile for webmconv
 
-# Variabili
+# Variables
 BINARY_NAME=webmconv
 BUILD_DIR=build
 
@@ -8,44 +8,45 @@ BUILD_DIR=build
 .PHONY: all
 all: build
 
-# Compila il programma
+# Build the program
 .PHONY: build
 build:
 	go build -o $(BUILD_DIR)/$(BINARY_NAME) .
 
-# Esegue i test
+# Run tests
 .PHONY: test
 test:
 	go test ./...
 
-# Esegue il programma con argomenti
+# Run the program with arguments
 .PHONY: run
 run:
 	go run main.go $(ARGS)
 
-# Pulizia
+# Clean
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
 
-# Installa il programma
+# Install the program
 .PHONY: install
 install:
 	go install .
 
-# Installa la CLI nel sistema
+# Install the CLI to the system
 .PHONY: install-cli
 install-cli: build
 	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
-	@echo "CLI installata in /usr/local/bin/$(BINARY_NAME)"
+	@echo "CLI installed to /usr/local/bin/$(BINARY_NAME)"
 
-# Aiuto
+# Help
 .PHONY: help
 help:
-	@echo "Comandi disponibili:"
-	@echo "  make build    - Compila il programma"
-	@echo "  make test     - Esegue i test"
-	@echo "  make run      - Esegue il programma (usa ARGS=\"...\" per passare argomenti)"
-	@echo "  make clean    - Rimuove i file generati"
-	@echo "  make install  - Installa il programma"
-	@echo "  make help     - Mostra questo messaggio"
+	@echo "Available commands:"
+	@echo "  make build      - Build the program"
+	@echo "  make test       - Run tests"
+	@echo "  make run        - Run the program (use ARGS=\"...\" to pass arguments)"
+	@echo "  make clean      - Remove generated files"
+	@echo "  make install    - Install the program"
+	@echo "  make install-cli - Build and copy executable to /usr/local/bin"
+	@echo "  make help       - Show this message"

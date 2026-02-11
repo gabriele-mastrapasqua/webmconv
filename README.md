@@ -44,22 +44,30 @@ webmconv -source <source_directory> [-dest <destination_directory>]
 
 #### Options
 
-- `-source`: Directory containing the files to convert (required)
+- `-source`: Directory containing the files to convert or a single file to convert (required)
 - `-dest`: Directory to save the converted files (optional, defaults to the source directory)
-- `-quality`: Quality level for conversion: max, medium, low (optional, defaults to medium)
-- `-range`: Time range for conversion in format start-end (e.g., 0-100s, 10-50s) (optional, defaults to full duration)
+- `-quality`: Quality level for conversion: max, medium, low (optional, defaults to max)
+- `-range`: Time range for conversion in format start-end (e.g., 0-100s, 10-50s, 1:02-2:30, 1:10:30-2:15:20) (optional, defaults to full duration)
 - `-help`: Show help message
 
 #### Example
 
 ```sh
+# Convert all files in a directory
 webmconv -source /path/to/videos -dest /path/to/output -quality max
 webmconv -source /path/to/videos -quality low
 webmconv -source /path/to/videos -quality medium -range 0-30s
+
+# Convert a single file
+webmconv -source /path/to/video.mp4 -dest /path/to/output -quality max
+
+# Convert with time range
 webmconv -source /path/to/videos -dest /path/to/output -quality high -range 10-60s
+webmconv -source /path/to/video.mp4 -dest /path/to/output -quality medium -range 1:02-2:30
+webmconv -source /path/to/videos -dest /path/to/output -quality low -range 1:10:30-2:15:20
 ```
 
-This example converts only the segment from 10s to 60s of each video file in the source directory.
+This example shows how to convert all files in a directory or a single file. The time format can be specified in seconds (with 's' suffix), minutes:seconds (MM:SS), or hours:minutes:seconds (HH:MM:SS).
 
 ### Make Commands
 
