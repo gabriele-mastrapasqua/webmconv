@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Quality rappresenta il livello di qualità per la conversione
@@ -17,7 +18,7 @@ const (
 )
 
 // ConvertToWebM converte un file video/gif in formato WebM usando FFmpeg
-func ConvertToWebM(inputPath string, outputPath string, quality Quality) error {
+func ConvertToWebM(inputPath string, outputPath string, quality Quality, rangeOption string) error {
 	// Controlla se il percorso di output contiene già l'estensione .webm
 	if filepath.Ext(outputPath) != ".webm" {
 		outputPath = filepath.Join(filepath.Dir(outputPath), filepath.Base(inputPath)+".webm")
@@ -32,8 +33,22 @@ func ConvertToWebM(inputPath string, outputPath string, quality Quality) error {
 		crfValue = "45" // Qualità bassa (CRF alto)
 	}
 
+	// Costruisci il comando FFmpeg con i parametri base
+	args := []string{"-i", inputPath}
+
+	// Aggiungi i parametri per il range se specificato
+	if rangeOption != "" {
+		parts := strings.Split(rangeOption, "-")
+		if len(parts) == 2 {
+			args = append(args, "-ss", parts[0], "-to", parts[1])
+		}
+	}
+
+	// Aggiungi i parametri di codifica
+	args = append(args, "-c:v", "libvpx-vp9", "-crf", crfValue, "-b:v", "0", "-b:a", "128k", "-c:a", "libopus", outputPath)
+
 	// Costruisci il comando FFmpeg
-	cmd := exec.Command("ffmpeg", "-i", inputPath, "-c:v", "libvpx-vp9", "-crf", crfValue, "-b:v", "0", "-b:a", "128k", "-c:a", "libopus", outputPath)
+	cmd := exec.Command("ffmpeg", args...)
 
 	// Esegui il comando e controlla per eventuali errori
 	err := cmd.Run()

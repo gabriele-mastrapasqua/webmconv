@@ -19,6 +19,7 @@ func main() {
 	sourceDir := flag.String("source", "", "Directory containing the files to convert")
 	destDir := flag.String("dest", "", "Directory to save the converted files (optional, otherwise uses the same directory)")
 	qualityStr := flag.String("quality", "medium", "Quality level for conversion: max, medium, low")
+	rangeOpt := flag.String("range", "", "Time range for conversion in format start-end (e.g., 0-100s, 10-50s)")
 	help := flag.Bool("help", false, "Show this help message")
 	flag.Parse()
 
@@ -97,7 +98,7 @@ func main() {
 			}
 
 			// Convert the file
-			if err := converter.ConvertToWebM(f, destPath, quality); err != nil {
+			if err := converter.ConvertToWebM(f, destPath, quality, *rangeOpt); err != nil {
 				log.Printf(" Error: %v\n", err)
 			} else {
 				fmt.Println(" Completed.")
@@ -117,17 +118,18 @@ func showHelp() {
 	fmt.Println("webmconv - A tool to convert video and GIF files to WebM format")
 	fmt.Println("")
 	fmt.Println("Usage:")
-	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>] [-quality <quality_level>]")
+	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>] [-quality <quality_level>] [-range <time_range>]")
 	fmt.Println("")
 	fmt.Println("Options:")
 	fmt.Println("  -source    Directory containing the files to convert (required)")
 	fmt.Println("  -dest      Directory to save the converted files (optional, otherwise uses the same directory)")
 	fmt.Println("  -quality   Quality level for conversion: max, medium, low (default: medium)")
+	fmt.Println("  -range     Time range for conversion in format start-end (e.g., 0-100s, 10-50s)")
 	fmt.Println("  -help      Show this help message")
 	fmt.Println("")
 	fmt.Println("Example:")
 	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output -quality max")
-	fmt.Println("  webmconv -source /path/to/videos -quality low")
+	fmt.Println("  webmconv -source /path/to/videos -quality low -range 0-30s")
 	fmt.Println("")
 	fmt.Println("Note: Ensure FFmpeg is installed and in your system PATH.")
 }

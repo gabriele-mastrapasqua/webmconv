@@ -47,6 +47,7 @@ webmconv -source <source_directory> [-dest <destination_directory>]
 - `-source`: Directory containing the files to convert (required)
 - `-dest`: Directory to save the converted files (optional, defaults to the source directory)
 - `-quality`: Quality level for conversion: max, medium, low (optional, defaults to medium)
+- `-range`: Time range for conversion in format start-end (e.g., 0-100s, 10-50s) (optional, defaults to full duration)
 - `-help`: Show help message
 
 #### Example
@@ -54,7 +55,11 @@ webmconv -source <source_directory> [-dest <destination_directory>]
 ```sh
 webmconv -source /path/to/videos -dest /path/to/output -quality max
 webmconv -source /path/to/videos -quality low
+webmconv -source /path/to/videos -quality medium -range 0-30s
+webmconv -source /path/to/videos -dest /path/to/output -quality high -range 10-60s
 ```
+
+This example converts only the segment from 10s to 60s of each video file in the source directory.
 
 ### Make Commands
 
