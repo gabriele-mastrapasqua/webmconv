@@ -33,6 +33,12 @@ clean:
 install:
 	go install .
 
+# Installa la CLI nel sistema
+.PHONY: install-cli
+install-cli: build
+	cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
+	@echo "CLI installata in /usr/local/bin/$(BINARY_NAME)"
+
 # Aiuto
 .PHONY: help
 help:

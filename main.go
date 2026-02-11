@@ -7,69 +7,114 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 
 	"webmconv/converter"
 	"webmconv/utils"
 )
 
 func main() {
-	// Definisci i flag per la directory sorgente e quella di destinazione
-	sourceDir := flag.String("source", "", "Directory contenente i file da convertire")
-	destDir := flag.String("dest", "", "Directory dove salvare i file convertiti (opzionale, altrimenti usa la stessa directory)")
+	// Define flags for source and destination directories
+	sourceDir := flag.String("source", "", "Directory containing the files to convert")
+	destDir := flag.String("dest", "", "Directory to save the converted files (optional, otherwise uses the same directory)")
+	help := flag.Bool("help", false, "Show this help message")
 	flag.Parse()
 
-	// Controlla se FFmpeg è disponibile
+	// Check if help was requested
+	if *help {
+		showHelp()
+		os.Exit(0)
+	}
+
+	// Check if FFmpeg is available
 	if _, err := exec.LookPath("ffmpeg"); err != nil {
-		log.Fatal("FFmpeg non trovato nel sistema. Assicurati che sia installato e presente nel PATH.")
+		log.Fatal("FFmpeg not found in the system. Please ensure it is installed and in your PATH.")
 	}
 
-	// Controlla se la directory sorgente è stata fornita
+	// Check if source directory was provided
 	if *sourceDir == "" {
-		log.Fatal("La directory sorgente deve essere specificata con il flag -source")
+		log.Fatal("Source directory must be specified with the -source flag")
 	}
 
-	// Controlla se la directory sorgente esiste
+	// Check if source directory exists
 	if _, err := os.Stat(*sourceDir); os.IsNotExist(err) {
-		log.Fatalf("La directory sorgente %s non esiste", *sourceDir)
+		log.Fatalf("Source directory %s does not exist", *sourceDir)
 	}
 
-	// Se la directory di destinazione non è specificata, usa la directory sorgente
+	// If destination directory is not specified, use the source directory
 	if *destDir == "" {
 		*destDir = *sourceDir
 	}
 
-	// Ottieni tutti i file supportati dalla directory sorgente
+	// Get all supported files from the source directory
 	files, err := utils.GetSupportedFiles(*sourceDir)
 	if err != nil {
-		log.Fatalf("Errore durante la scansione della directory: %v", err)
+		log.Fatalf("Error scanning directory: %v", err)
 	}
 
-	// Contatore per tenere traccia del progresso
+	// Counter to track progress
 	totalFiles := len(files)
-	convertedCount := 0
+	convertedCount := int64(0) // Used with atomic for thread safety
+
+	// Number of goroutines for concurrent conversion
+	numWorkers := 4 // Can be made configurable via flag
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, numWorkers) // Limits the number of concurrent conversions
 
 	for _, file := range files {
-		fmt.Printf("Conversione di %s in corso...", file)
+		wg.Add(1)
+		go func(f string) {
+			defer wg.Done()
+			
+			// Acquire a slot in the semaphore
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }() // Release when done
 
-		// Calcola il percorso di destinazione
-		relPath, _ := filepath.Rel(*sourceDir, file)
-		destPath := filepath.Join(*destDir, relPath)
+			fmt.Printf("Converting %s...", f)
 
-		// Crea la directory di destinazione se non esiste
-		destDirPath := filepath.Dir(destPath)
-		if err := os.MkdirAll(destDirPath, 0755); err != nil {
-			log.Printf("Impossibile creare la directory di destinazione %s: %v", destDirPath, err)
-			continue
-		}
+			// Calculate destination path
+			relPath, _ := filepath.Rel(*sourceDir, f)
+			destPath := filepath.Join(*destDir, relPath)
 
-		// Converti il file
-		if err := converter.ConvertToWebM(file, destPath); err != nil {
-			log.Printf(" Errore: %v\n", err)
-		} else {
-			fmt.Println(" Completato.")
-			convertedCount++
-		}
+			// Create destination directory if it doesn't exist
+			destDirPath := filepath.Dir(destPath)
+			if err := os.MkdirAll(destDirPath, 0755); err != nil {
+				log.Printf("Could not create destination directory %s: %v", destDirPath, err)
+				return
+			}
+
+			// Convert the file
+			if err := converter.ConvertToWebM(f, destPath); err != nil {
+				log.Printf(" Error: %v\n", err)
+			} else {
+				fmt.Println(" Completed.")
+				// Thread-safe increment of the counter
+				atomic.AddInt64(&convertedCount, 1)
+			}
+		}(file)
 	}
 
-	fmt.Printf("\nConversione terminata. %d/%d file convertiti con successo.\n", convertedCount, totalFiles)
+	wg.Wait()
+
+	fmt.Printf("\nConversion finished. %d/%d files converted successfully.\n", convertedCount, totalFiles)
+}
+
+// showHelp displays a help message with usage instructions
+func showHelp() {
+	fmt.Println("webmconv - A tool to convert video and GIF files to WebM format")
+	fmt.Println("")
+	fmt.Println("Usage:")
+	fmt.Println("  webmconv -source <source_directory> [-dest <destination_directory>]")
+	fmt.Println("")
+	fmt.Println("Options:")
+	fmt.Println("  -source    Directory containing the files to convert (required)")
+	fmt.Println("  -dest      Directory to save the converted files (optional, otherwise uses the same directory)")
+	fmt.Println("  -help      Show this help message")
+	fmt.Println("")
+	fmt.Println("Example:")
+	fmt.Println("  webmconv -source /path/to/videos -dest /path/to/output")
+	fmt.Println("  webmconv -source /path/to/videos")
+	fmt.Println("")
+	fmt.Println("Note: Ensure FFmpeg is installed and in your system PATH.")
 }
